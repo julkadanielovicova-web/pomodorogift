@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F1 Heardle Challenge 🏎️</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --ferrari-red: #DC0000;
+            --racing-black: #15151E;
+            --carbon-dark: #1A1A24;
+            --grid-gray: #2A2A35;
+            --flag-white: #FFFFFF;
+            --pit-yellow: #FFD700;
+            --safety-orange: #FF6B00;
+            --success-green: #00FF00;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--racing-black);
+            color: var(--flag-white);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 300%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 50px,
+                rgba(220, 0, 0, 0.03) 50px,
+                rgba(220, 0, 0, 0.03) 100px
+            );
+            animation: raceStripes 20s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes raceStripes {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(100px); }
+        }
+
+        .game-container {
+            max-width: 700px;
+            width: 100%;
+            background: linear-gradient(135deg, var(--carbon-dark), var(--racing-black));
+            border: 4px solid var(--ferrari-red);
+            border-radius: 30px;
+            padding: 3rem;
+            position: relative;
+            z-index: 1;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            animation: slideUp 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .game-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: linear-gradient(90deg, var(--ferrari-red), var(--pit-yellow), var(--ferrari-red));
+            background-size: 200% 100%;
+            animation: shimmer 2s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { background-position: 0% 0%; }
+            50% { background-position: 100% 0%; }
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--ferrari-red), #FF4444, var(--pit-yellow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            text-align: center;
+            text-shadow: 0 0 40px rgba(220, 0, 0, 0.5);
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #999;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            font-weight: 600;
+        }
+
+        .attempts-display {
+            text-align: center;
+            font-size: 1.1rem;
+            color: var(--pit-yellow);
+            margin-bottom: 2rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .audio-controls {
+            margin-bottom: 2rem;
+        }
+
+        .audio-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .audio-btn {
+            padding: 1.2rem;
+            background: linear-gradient(135deg, var(--grid-gray), var(--carbon-dark));
+            border: 3px solid var(--ferrari-red);
+            border-radius: 15px;
+            color: var(--flag-white);
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .audio-btn:hover:not(:disabled) {
+            background: var(--ferrari-red);
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(220, 0, 0, 0.5);
+        }
+
+        .audio-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .audio-btn.played {
+            background: linear-gradient(135deg, var(--success-green), #008800);
+            border-color: var(--success-green);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+        }
+
+        .skip-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--safety-orange), #CC5500);
+            border: 3px solid var(--safety-orange);
+            border-radius: 15px;
+            color: white;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .skip-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 30px rgba(255, 107, 0, 0.5);
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1.2rem 1.5rem;
+            background: var(--grid-gray);
+            border: 3px solid var(--ferrari-red);
+            border-radius: 15px;
+            color: var(--flag-white);
+            font-size: 1.1rem;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--pit-yellow);
+            background: var(--carbon-dark);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .search-input::placeholder {
+            color: #666;
+        }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--carbon-dark);
+            border: 3px solid var(--ferrari-red);
+            border-radius: 15px;
+            margin-top: 0.5rem;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        .search-result {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid var(--grid-gray);
+        }
+
+        .search-result:last-child {
+            border-bottom: none;
+        }
+
+        .search-result:hover {
+            background: var(--ferrari-red);
+        }
+
+        .result-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .result-artist {
+            font-size: 0.95rem;
+            color: #999;
+        }
+
+        .guesses {
+            margin-bottom: 2rem;
+        }
+
+        .guess-item {
+            background: var(--grid-gray);
+            padding: 1rem 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 0.8rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideInRight 0.4s ease;
+            border: 3px solid transparent;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .guess-item.correct {
+            background: linear-gradient(135deg, rgba(0, 255, 0, 0.2), rgba(0, 255, 0, 0.1));
+            border-color: var(--success-green);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+
+        .guess-item.incorrect {
+            background: linear-gradient(135deg, rgba(220, 0, 0, 0.2), rgba(220, 0, 0, 0.1));
+            border-color: var(--ferrari-red);
+        }
+
+        .guess-item.skipped {
+            background: linear-gradient(135deg, rgba(255, 107, 0, 0.2), rgba(255, 107, 0, 0.1));
+            border-color: var(--safety-orange);
+        }
+
+        .guess-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .correct .guess-badge {
+            background: var(--success-green);
+            color: var(--racing-black);
+        }
+
+        .incorrect .guess-badge {
+            background: var(--ferrari-red);
+            color: white;
+        }
+
+        .skipped .guess-badge {
+            background: var(--safety-orange);
+            color: white;
+        }
+
+        .result-area {
+            text-align: center;
+            animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes bounceIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.3);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .result-message {
+            font-size: 2rem;
+            font-weight: 900;
+            margin-bottom: 2rem;
+            padding: 2rem;
+            border-radius: 20px;
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .result-message.won {
+            background: linear-gradient(135deg, rgba(0, 255, 0, 0.2), rgba(0, 255, 0, 0.1));
+            border: 3px solid var(--success-green);
+            color: var(--success-green);
+            text-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+        }
+
+        .result-message.lost {
+            background: linear-gradient(135deg, rgba(220, 0, 0, 0.2), rgba(220, 0, 0, 0.1));
+            border: 3px solid var(--ferrari-red);
+            color: var(--ferrari-red);
+        }
+
+        .song-reveal {
+            background: var(--grid-gray);
+            padding: 2rem;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+            border: 3px solid var(--ferrari-red);
+        }
+
+        .song-reveal-title {
+            font-size: 2rem;
+            font-weight: 900;
+            margin-bottom: 0.5rem;
+            font-family: 'Orbitron', sans-serif;
+            color: var(--pit-yellow);
+        }
+
+        .song-reveal-artist {
+            font-size: 1.3rem;
+            color: #999;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 1.2rem;
+            background: linear-gradient(135deg, var(--ferrari-red), #AA0000);
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.02);
+            box-shadow: 0 15px 40px rgba(220, 0, 0, 0.5);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            font-size: 1.3rem;
+            color: var(--pit-yellow);
+            font-weight: 700;
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 2rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .audio-buttons {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🏎️ F1 HEARDLE 🏁</h1>
+        <p class="subtitle">Name That Track!</p>
+
+        <div id="gameLoading" class="loading">
+            🏁 Loading your race track...
+        </div>
+
+        <div id="gameArea" style="display: none;">
+            <div class="attempts-display" id="attemptsDisplay">
+                Attempts Remaining: <strong>6</strong>
+            </div>
+
+            <div class="audio-controls">
+                <div class="audio-buttons">
+                    <button class="audio-btn" onclick="playAudio(0, 1)">▶ 1s</button>
+                    <button class="audio-btn" onclick="playAudio(1, 2)" disabled>▶ 2s</button>
+                    <button class="audio-btn" onclick="playAudio(2, 4)" disabled>▶ 4s</button>
+                    <button class="audio-btn" onclick="playAudio(3, 8)" disabled>▶ 8s</button>
+                    <button class="audio-btn" onclick="playAudio(4, 16)" disabled>▶ 16s</button>
+                    <button class="audio-btn" onclick="playAudio(5, 30)" disabled>▶ Full</button>
+                </div>
+                <button class="skip-btn" onclick="skipGuess()">
+                    ⏭ SKIP LAP (+unlock next duration)
+                </button>
+            </div>
+
+            <div class="search-box">
+                <input 
+                    type="text" 
+                    class="search-input" 
+                    id="searchInput" 
+                    placeholder="Type the song name or artist..."
+                    oninput="searchSongs(this.value)"
+                >
+                <div class="search-results" id="searchResults" style="display: none;"></div>
+            </div>
+
+            <div class="guesses" id="guesses"></div>
+        </div>
+
+        <div id="resultArea" style="display: none;" class="result-area">
+            <div class="result-message" id="resultMessage"></div>
+            <div class="song-reveal">
+                <div class="song-reveal-title" id="correctTitle"></div>
+                <div class="song-reveal-artist" id="correctArtist"></div>
+            </div>
+            <button class="btn-primary" onclick="playAgain()">
+                🔄 RACE AGAIN
+            </button>
+        </div>
+    </div>
+
+    <audio id="audioPlayer"></audio>
+
+    <script>
+        // ⚠️ IMPORTANT: Update these URLs after uploading MP3s to GitHub!
+        // Replace 'pomodorogift' with your actual repo name if different
+        const SONGS = [
+            {
+                id: 1,
+                name: "My Type",
+                artist: "Saint Motel",
+                url: "https://julkadanielovicova-web.github.io/pomodorogift/songs/song1.mp3"
+            },
+            {
+                id: 2,
+                name: "Take Me Out",
+                artist: "Franz Ferdinand",
+                url: "https://julkadanielovicova-web.github.io/pomodorogift/songs/song2.mp3"
+            },
+            {
+                id: 3,
+                name: "Houdini",
+                artist: "Dua Lipa",
+                url: "https://julkadanielovicova-web.github.io/pomodorogift/songs/song3.mp3"
+            }
+        ];
+
+        // Game State
+        let currentSong = null;
+        let guessCount = 0;
+        let maxGuesses = 6;
+        let currentPlayIndex = 0;
+
+        // Initialize game
+        window.addEventListener('load', () => {
+            loadRandomSong();
+        });
+
+        function loadRandomSong() {
+            const randomIndex = Math.floor(Math.random() * SONGS.length);
+            currentSong = SONGS[randomIndex];
+            
+            console.log('Loaded song:', currentSong.name, 'by', currentSong.artist);
+            
+            document.getElementById('gameLoading').style.display = 'none';
+            document.getElementById('gameArea').style.display = 'block';
+            resetGameState();
+        }
+
+        function resetGameState() {
+            guessCount = 0;
+            currentPlayIndex = 0;
+            document.getElementById('guesses').innerHTML = '';
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchResults').style.display = 'none';
+            updateAttemptsDisplay();
+            
+            const buttons = document.querySelectorAll('.audio-btn');
+            buttons.forEach((btn, idx) => {
+                btn.disabled = idx !== 0;
+                btn.classList.remove('played');
+            });
+        }
+
+        function updateAttemptsDisplay() {
+            const remaining = maxGuesses - guessCount;
+            document.getElementById('attemptsDisplay').innerHTML = 
+                `Attempts Remaining: <strong>${remaining}</strong>`;
+        }
+
+        function playAudio(index, duration) {
+            if (!currentSong) {
+                alert('Error loading song. Please refresh!');
+                return;
+            }
+
+            const audio = document.getElementById('audioPlayer');
+            audio.src = currentSong.url;
+            audio.currentTime = 0;
+            
+            audio.play().catch(error => {
+                console.error('Audio play error:', error);
+                alert('Could not play audio. Make sure the MP3 files are uploaded to GitHub in the "songs" folder!');
+            });
+
+            setTimeout(() => {
+                audio.pause();
+            }, duration * 1000);
+
+            const buttons = document.querySelectorAll('.audio-btn');
+            buttons[index].classList.add('played');
+            
+            // Don't auto-unlock next button anymore - only unlock on guess/skip
+            currentPlayIndex = index;
+        }
+
+        function skipGuess() {
+            if (guessCount >= maxGuesses) return;
+
+            guessCount++;
+            
+            const guessesDiv = document.getElementById('guesses');
+            const guessItem = document.createElement('div');
+            guessItem.className = 'guess-item skipped';
+            guessItem.innerHTML = `
+                <div>
+                    <div class="result-title">Skipped</div>
+                    <div class="result-artist">No guess made</div>
+                </div>
+                <span class="guess-badge">⏭ Skip</span>
+            `;
+            guessesDiv.appendChild(guessItem);
+
+            updateAttemptsDisplay();
+
+            // Unlock the NEXT button (not current)
+            const buttons = document.querySelectorAll('.audio-btn');
+            if (currentPlayIndex < buttons.length - 1) {
+                buttons[currentPlayIndex + 1].disabled = false;
+                currentPlayIndex++; // Move to next
+            }
+
+            if (guessCount >= maxGuesses) {
+                showResult(false);
+            }
+        }
+
+        function searchSongs(query) {
+            if (!query || query.length < 2) {
+                document.getElementById('searchResults').style.display = 'none';
+                return;
+            }
+
+            // Filter songs based on search
+            const filtered = SONGS.filter(song => 
+                song.name.toLowerCase().includes(query.toLowerCase()) ||
+                song.artist.toLowerCase().includes(query.toLowerCase())
+            );
+
+            displaySearchResults(filtered);
+        }
+
+        function displaySearchResults(results) {
+            const resultsDiv = document.getElementById('searchResults');
+            
+            if (results.length === 0) {
+                resultsDiv.style.display = 'none';
+                return;
+            }
+
+            resultsDiv.innerHTML = results.map(track => `
+                <div class="search-result" onclick='makeGuess(${JSON.stringify({
+                    id: track.id,
+                    name: track.name,
+                    artist: track.artist
+                })})'>
+                    <div class="result-title">${track.name}</div>
+                    <div class="result-artist">${track.artist}</div>
+                </div>
+            `).join('');
+            
+            resultsDiv.style.display = 'block';
+        }
+
+        function makeGuess(track) {
+            if (guessCount >= maxGuesses) return;
+
+            guessCount++;
+            const isCorrect = track.id === currentSong.id;
+
+            const guessesDiv = document.getElementById('guesses');
+            const guessItem = document.createElement('div');
+            guessItem.className = `guess-item ${isCorrect ? 'correct' : 'incorrect'}`;
+            guessItem.innerHTML = `
+                <div>
+                    <div class="result-title">${track.name}</div>
+                    <div class="result-artist">${track.artist}</div>
+                </div>
+                <span class="guess-badge">${isCorrect ? '✓ P1!' : '✗ DNF'}</span>
+            `;
+            guessesDiv.appendChild(guessItem);
+
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchResults').style.display = 'none';
+            updateAttemptsDisplay();
+
+            if (isCorrect) {
+                showResult(true);
+            } else if (guessCount >= maxGuesses) {
+                showResult(false);
+            } else {
+                // Unlock the NEXT button after wrong guess
+                const buttons = document.querySelectorAll('.audio-btn');
+                if (currentPlayIndex < buttons.length - 1) {
+                    buttons[currentPlayIndex + 1].disabled = false;
+                    currentPlayIndex++; // Move to next
+                }
+            }
+        }
+
+        function showResult(won) {
+            document.getElementById('gameArea').style.display = 'none';
+            document.getElementById('resultArea').style.display = 'block';
+
+            const resultMessage = document.getElementById('resultMessage');
+            resultMessage.className = `result-message ${won ? 'won' : 'lost'}`;
+            resultMessage.textContent = won 
+                ? `🏁 CHECKERED FLAG! You got it in ${guessCount} ${guessCount === 1 ? 'attempt' : 'attempts'}!` 
+                : `🚨 OUT OF LAPS! The answer was:`;
+
+            document.getElementById('correctTitle').textContent = currentSong.name;
+            document.getElementById('correctArtist').textContent = `by ${currentSong.artist}`;
+
+            document.getElementById('audioPlayer').pause();
+        }
+
+        function playAgain() {
+            document.getElementById('resultArea').style.display = 'none';
+            document.getElementById('gameArea').style.display = 'block';
+            loadRandomSong();
+        }
+
+        // Close search results when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-box')) {
+                document.getElementById('searchResults').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
